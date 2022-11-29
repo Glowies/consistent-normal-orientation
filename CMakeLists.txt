@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(mesh-reconstruction)
+project(consistent-normals)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 ### libIGL options: choose between header only and compiled static library
@@ -19,5 +19,5 @@ endif()
 add_library(core ${SRCFILES})
 target_link_libraries(core igl::core igl::glfw )
 
-add_executable(mesh-reconstruction "main.cpp")
-target_link_libraries(mesh-reconstruction core igl::core igl::opengl igl::glfw )
+add_executable(consistent-normals "main.cpp")
+target_link_libraries(consistent-normals core igl::core igl::opengl igl::glfw )
