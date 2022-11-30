@@ -42,11 +42,91 @@ void estimate_normals(
 		std::vector<double> sorted;
 		std::vector<size_t> index_map;
 
-		igl::sort(unsorted, false, sorted, index_map);
+		igl::sort(unsorted, true, sorted, index_map);
 		Eigen::Matrix3d uvw;
 
 		// Set estimated N to eigenvector with the least eigenvalue
 		estimated_N.row(i) = uvw_unsorted.col(index_map[0]);
+	}
+}
+
+void find_support_radii_squared(
+	const MatrixXd & P,
+	const MatrixXi & kNN,
+	VectorXd & support_radii)
+{
+	support_radii.resize(kNN.rows());
+
+	for(int i=0; i<kNN.rows(); i++)
+	{
+		Vector3d curr_pos = P.row(i);
+
+		double max = 0;
+		for(int j=0; j<kNN.cols(); j++)
+		{
+			Vector3d other_pos = P.row(kNN(i, j));
+			Vector3d diff = curr_pos - other_pos;
+			double distance = diff.dot(diff);
+
+			if(distance > max)
+			{
+				max = distance;
+			}
+		}
+
+		support_radii(i) = max;
+	}
+}
+
+void find_weights(
+	const MatrixXd & P,
+	const MatrixXd & N,
+	const MatrixXi & kNN,
+	MatrixXd & E,
+	MatrixXd & W)
+{
+	E.resize(kNN.rows(), kNN.cols());
+	W.resize(kNN.rows(), kNN.cols());
+
+	// Find squared support radii
+	VectorXd support_r;
+	find_support_radii_squared(P, kNN, support_r);
+
+	// Calculate potentials and weights for each edge
+	for(int i=0; i<kNN.rows(); i++)
+	{
+		Vector3d pos_i = P.row(i);
+		Vector3d n_i = N.row(i);
+		double r_i = support_r(i);
+
+		for(int j_index=0; j_index<kNN.cols(); j_index++)
+		{
+			int j = kNN(i, j_index);
+			Vector3d pos_j = P.row(j);
+			Vector3d n_j = N.row(j);
+			double r_j = support_r(j);
+
+			// find distances squared
+			Vector3d diff = pos_i - pos_j;
+			double distance = diff.dot(diff);
+
+			// find max support radius squared
+			double r_max = std::max(r_i, r_j);
+
+			// find w
+			double w = std::exp(-distance/r_max);
+
+			// find flip criterion
+			Vector3d e = diff.normalized();
+			Vector3d n_i_new = n_i - e.dot(n_i) * e;
+
+			double flip = n_i_new.dot(n_j);
+
+			// find potential and weight
+			double potential = flip * w;
+			E(i, j_index) = potential;
+			W(i, j_index) = std::abs(potential);
+		}
 	}
 }
 
@@ -74,6 +154,12 @@ void make_consistent_normals(
 	// on its k nearest neighbors
 	MatrixXd estimated_N;
 	estimate_normals(P, kNN, estimated_N);
+
+	// (3.2) Graph Construction
+	// Calculate potentials and weights for the edges
+	// of the kNN graph
+	MatrixXd E, W;
+	find_weights(P, estimated_N, kNN, E, W);
 
 	result_N = estimated_N;
 }
