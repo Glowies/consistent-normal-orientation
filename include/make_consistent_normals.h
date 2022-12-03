@@ -1,5 +1,5 @@
-#ifndef FD_GRAD_H
-#define FD_GRAD_H
+#ifndef CONSISTENT_NORMALS_H
+#define CONSISTENT_NORMALS_H
 #include <Eigen/Dense>
 
 void make_consistent_normals(

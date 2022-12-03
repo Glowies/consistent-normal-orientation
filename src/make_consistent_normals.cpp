@@ -1,4 +1,5 @@
 #include "make_consistent_normals.h"
+#include "cluster_edges.h"
 #include <igl/octree.h>
 #include <igl/knn.h>
 
@@ -82,11 +83,13 @@ void find_weights(
 	const MatrixXd & P,
 	const MatrixXd & N,
 	const MatrixXi & kNN,
-	MatrixXd & E,
-	MatrixXd & W)
+	VectorXd & E,
+	VectorXd & W)
 {
-	E.resize(kNN.rows(), kNN.cols());
-	W.resize(kNN.rows(), kNN.cols());
+	int n = kNN.rows();
+	int k = kNN.cols();
+	E.resize(n*k);
+	W.resize(n*k);
 
 	// Find squared support radii
 	VectorXd support_r;
@@ -124,8 +127,31 @@ void find_weights(
 
 			// find potential and weight
 			double potential = flip * w;
-			E(i, j_index) = potential;
-			W(i, j_index) = std::abs(potential);
+			E(i * k + j_index) = potential;
+			W(i * k + j_index) = std::abs(potential);
+		}
+	}
+}
+
+void make_edge_list(
+	const MatrixXi & kNN,
+	MatrixXi & edges
+)
+{
+	int n = kNN.rows();
+	int k = kNN.cols();
+	edges.resize(n * k, 2);
+
+	for(int i=0; i<n; i++)
+	{
+		int v1 = i;
+
+		for(int j=0; j<k; j++)
+		{
+			int v2 = kNN(i, j);
+
+			edges(i * k + j, 0) = std::min(v1, v2);
+			edges(i * k + j, 1) = std::max(v1, v2);
 		}
 	}
 }
@@ -135,7 +161,7 @@ void make_consistent_normals(
     const MatrixXd & N,
     MatrixXd & result_N)
 {
-	const int k = 16;
+	const int k = 8;
   result_N = MatrixXd::Zero(N.rows(), N.cols());
 
   // Build octree
@@ -158,8 +184,29 @@ void make_consistent_normals(
 	// (3.2) Graph Construction
 	// Calculate potentials and weights for the edges
 	// of the kNN graph
-	MatrixXd E, W;
+	MatrixXi edges;
+	make_edge_list(kNN, edges);
+	VectorXd E, W;
 	find_weights(P, estimated_N, kNN, E, W);
+	
+	// (3.3) Consistent Normal Orientation
+	VectorXi collapse_target, flipflag;
+	cluster_edges(kNN, edges, E, W, collapse_target, flipflag);
+
+	for(int i=0; i<collapse_target.rows(); i++)
+	{
+		int target = collapse_target(i);
+		int flipsign = 1;
+		
+		while (target != -1)
+		{
+			std::cout << target << " -> " <<  collapse_target(target) << " : " << flipflag(target) << std::endl;
+			flipsign *= flipflag(target);
+			target = collapse_target(target);
+		}
+
+		estimated_N(i) = flipsign * estimated_N(i);
+	}
 
 	result_N = estimated_N;
 }
