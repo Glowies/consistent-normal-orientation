@@ -4,6 +4,7 @@
 
 void cluster_edges(
 	const Eigen::MatrixXi & kNN,
+	int iteration_count,
 	Eigen::MatrixXi & edges,
 	Eigen::VectorXd & E,
 	Eigen::VectorXd & W,

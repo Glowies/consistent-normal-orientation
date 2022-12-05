@@ -157,7 +157,7 @@ void handle_orientation_flips(
 
 		if(E(target_edge_i) < 0)
 		{
-			E(target_edge_i) = -E(target_edge_i);
+			// E(target_edge_i) = -E(target_edge_i);
 			flipflag(edge(0)) = -1;
 			flipflag(edge(1)) = -1;
 		}
@@ -293,6 +293,7 @@ void clean_edges(
 
 void cluster_edges(
 	const MatrixXi & kNN,
+	int iteration_count,
 	MatrixXi & edges,
 	VectorXd & E,
 	VectorXd & W,
@@ -309,8 +310,15 @@ void cluster_edges(
 	VectorXi edge_index_per_vertex;
 
 	// Keep collapsing edges while there are edges left
+	int loop_count = 1;
 	while(edges.rows() > 0)
 	{
+		if(loop_count == iteration_count)
+		{
+			break;
+		}
+		loop_count++;
+
 		// Find Collapsible Edge
 		find_collapsible_edges(kNN, edges, E, W, max_edge_energy_per_vertex, max_weight_edge, collapse_target, edge_index_per_vertex);
 		

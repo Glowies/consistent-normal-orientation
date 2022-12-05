@@ -159,6 +159,9 @@ void make_edge_list(
 void make_consistent_normals(
     const MatrixXd & P,
     const MatrixXd & N,
+		int iteration_count,
+		MatrixXi & edges,
+		VectorXd & E,
     MatrixXd & result_N)
 {
 	const int k = 8;
@@ -184,14 +187,13 @@ void make_consistent_normals(
 	// (3.2) Graph Construction
 	// Calculate potentials and weights for the edges
 	// of the kNN graph
-	MatrixXi edges;
 	make_edge_list(kNN, edges);
-	VectorXd E, W;
+	VectorXd W;
 	find_weights(P, estimated_N, kNN, E, W);
 	
 	// (3.3) Consistent Normal Orientation
 	VectorXi collapse_target, flipflag;
-	cluster_edges(kNN, edges, E, W, collapse_target, flipflag);
+	cluster_edges(kNN, iteration_count, edges, E, W, collapse_target, flipflag);
 
 	for(int i=0; i<collapse_target.rows(); i++)
 	{
@@ -200,7 +202,6 @@ void make_consistent_normals(
 		
 		while (target != -1)
 		{
-			std::cout << target << " -> " <<  collapse_target(target) << " : " << flipflag(target) << std::endl;
 			flipsign *= flipflag(target);
 			target = collapse_target(target);
 		}
