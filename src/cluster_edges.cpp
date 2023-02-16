@@ -144,7 +144,6 @@ void handle_orientation_flips(
 	VectorXi & flipflag
 )
 {
-	flipflag = VectorXi::Ones(edge_index_per_vertex.size());
 	for(int i=0; i<edge_index_per_vertex.size(); i++)
 	{
 		int target_edge_i = edge_index_per_vertex(i);
@@ -157,8 +156,7 @@ void handle_orientation_flips(
 
 		if(E(target_edge_i) < 0)
 		{
-			// E(target_edge_i) = -E(target_edge_i);
-			flipflag(edge(0)) = -1;
+			E(target_edge_i) = -E(target_edge_i);
 			flipflag(edge(1)) = -1;
 		}
 	}
@@ -194,11 +192,11 @@ void collapse_edges(
 			temp = collapse_target(temp);
 		}
 
-		if (new1 == -1)
+		if (new1 != -1)
 		{
 			edges(edge_i, 0) = new1;
 		}
-		if (new2 == -1)
+		if (new2 != -1)
 		{
 			edges(edge_i, 1) = new2;
 		}
@@ -270,7 +268,7 @@ void clean_edges(
 		// Skip edge if invalid or duplicate
 		if(edge_set.count(edge_pair) > 0 || 
 			edge(0) == edge(1) || 
-			edge(0) < 0 || edge(1) < 1)
+			edge(0) < 0 || edge(1) < 0)
 		{
 			continue;
 		}
@@ -308,6 +306,7 @@ void cluster_edges(
 	VectorXd max_edge_energy_per_vertex;
 	VectorXi max_weight_edge;
 	VectorXi edge_index_per_vertex;
+	flipflag = VectorXi::Ones(kNN.rows());
 
 	// Keep collapsing edges while there are edges left
 	int loop_count = 1;
