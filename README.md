@@ -3,7 +3,7 @@
 This project implements the following paper:
 https://onlinelibrary.wiley.com/doi/full/10.1111/cgf.13797
 
-Given an unorganized ponit cloud, it estimates normals for each point by applying PCA on its nearest neighbors. After that, it creates a kNN graph using libigl and proceeds to collapse this graph using the greedy graph collapse algorithm outlined in the paper. It keeps track of the orientation flips performed during the graph collapse and reorients the estimated normals using this information.
+Given an unorganized point cloud, it estimates normals for each point by applying PCA on its nearest neighbors. After that, it creates a kNN graph using libigl and proceeds to collapse this graph using the greedy graph collapse algorithm outlined in the paper. It keeps track of the orientation flips performed during the graph collapse and reorients the estimated normals using this information.
 
 ## Compilation
 
